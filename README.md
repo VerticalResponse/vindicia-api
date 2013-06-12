@@ -28,7 +28,7 @@ Add something like the following to your environments or in an initializer:
 
 ```ruby
 Vindicia.configure do |config|
-  config.api_version = '3.6'
+  config.api_version = '4.0'
   config.login = 'your_login'
   config.password = 'your_password' 
   config.endpoint = 'https://soap.prodtest.sj.vindicia.com/soap.pl'
@@ -43,7 +43,6 @@ Vindicia.configure do |config|
   config.ssl.verify_mode = :none
 
   # In a Rails application you might want Savon to use the Rails logger.
-  # config.logger = Rails.logger
   config.logger = Rails.logger
 
   # The default log level used by Savon is :debug.
@@ -56,7 +55,7 @@ Vindicia.configure do |config|
   # The XML logged by Savon can be formatted for debugging purposes.
   # Unfortunately, this feature comes with a performance and is not
   # recommended for production environments.
-  # config.pretty_print_xml = true
+  # config.pretty_print_xml = false
   config.pretty_print_xml = true
 
 end
@@ -64,23 +63,45 @@ end
 
 You will want to modify the example above with which API version you are targeting, your login credentials, and the Vindicia endpoint you will be using.
 
-Current supported API versions are '3.5' and '3.6'.
+Current supported API versions are '4.0' only
 
 Available Vindicia endpoints are:
 
 * Development: "https://soap.prodtest.sj.vindicia.com/soap.pl"
-* Staging: "https://soap.staging.sj.vindicia.com"
-* Production: "https://soap.vindicia.com/soap.pl"
+* Staging:     "https://soap.staging.sj.vindicia.com"
+* Production:  "https://soap.vindicia.com/soap.pl"
 
 After the Vindicia API has been configured, all Vindicia classes for the respective API version will be available under the `Vindicia::*` namespace.
 
 Parameters are passed as hashes, for example:
 
 ```ruby
-Vindicia::AutoBill.fetch_by_account(:account => { :merchantAccountId => id }
+Vindicia::AutoBill.fetch_by_account(account: { merchant_account_id: 1 })
 ```
 
 * Note that parameters must be specified in the same order as documented in Vindicia's developer documentation.
+
+* Objects are returned instead of hashes from the API
+```ruby
+product = Vindicia::Product.fetch_by_merchant_product_id({ merchant_product_id: 'MY_FIRST_PRODUCT'})
+product.inspect
+=>  Cashbox::Product VID = "f7111111117233c91cb9b152e4f3527a781e582",
+     merchant_product_id = "MY_FIRST_PRODUCT",
+                  status = "Active",
+     tax_classification  = "TaxExempt",
+            descriptions = <Cashbox::ProductDescription
+                language = "EN",
+             description = "Free Subscription" >,
+             name_values = <Cashbox::NameValues
+              pair_name1 = "pair_value1",
+              pair_name2 = "pair_value2" >,>
+# Access it like:
+product.VID
+=> "f7111111117233c91cb9b152e4f3527a781e582"
+product.name_values.pair_name1
+=> "pair_value1"
+```
+
 
 ## Bugs
 
