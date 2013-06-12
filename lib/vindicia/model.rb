@@ -1,11 +1,10 @@
-require "savon"
+require 'savon'
 
 module Vindicia
-
-  # = Vindicia::Model
-  #
-  # Model for SOAP service oriented applications.
   module Model
+    def self.included(base)
+      base.extend ClassMethods
+    end
 
     module ClassMethods
 
@@ -19,79 +18,95 @@ module Vindicia
       end
 
       def client(&block)
-        @client ||= Savon::Client.new &block
+        Vindicia.config.client
       end
 
-      def endpoint(uri)
-        client.wsdl.endpoint = uri
-      end
-
-      def namespace(uri)
-        client.wsdl.namespace = uri
-      end
-
-      # Accepts one or more SOAP actions and generates both class and instance methods named
-      # after the given actions. Each generated method accepts an optional SOAP body Hash and
-      # a block to be passed to <tt>Savon::Client#request</tt> and executes a SOAP request.
-      def actions(*actions)
-        actions.each do |action|
-          define_class_action action
+      # Creates the methods to call the API.
+      #   raw_<method_name>
+      #     in which the http object is correctly setup. Private method
+      #   <method_name>
+      #     which calls the first 'raw_' method and parses the response,
+      #        once parsed, creates or uses the Cashbox::Class to create object
+      #
+      def actions(*methods)
+        methods.each do |method_name, result_options|
+          define_api_call_routine(method_name)
+          define_class_action(method_name, result_options)
         end
       end
 
-    private
+      private
 
-      def define_class_action(action)
+      # Calls the raw_<method_name> function to retrieve response from Vindicia
+      # Then parses the Savon Response object into a hash.
+      # NOTE: The result might be polymorphic (Hash || Array)
+      def define_class_action(method_name, result_options)
+        method_name = method_name.to_s.underscore
+
         class_action_module.module_eval <<-CODE
-          def #{action.to_s.underscore}(body = {}, &block)
-            client.request :tns, #{action.inspect} do
-              soap.namespaces["xmlns:tns"] = vindicia_target_namespace
-              http.headers["SOAPAction"] = vindicia_soap_action('#{action}')
-              soap.body = {
-                :auth => vindicia_auth_credentials
-              }.merge(body)
-              block.call(soap, wsdl, http, wsse) if block
+          def #{ method_name.to_s.underscore }(body = {}, &block)
+            result = self.send('raw_#{ method_name }', body, &block)
+            parser = Vindicia::Parser.new(result, klass_name, :#{method_name}, #{result_options})
+
+            if parser.is_response_a_collection?
+              collection = []
+              parser.parse! do |result_item|
+                collection << Cashbox.const_get(klass_name).new(result_item)
+              end
+              collection
+            else
+              klass = Cashbox.const_get(klass_name)
+              klass.new(parser.parse!)
             end
-          rescue Exception => e
-            rescue_exception(:#{action.to_s.underscore}, e)
+          rescue Vindicia::Parser::IncorrectApiRequestError => ex
+            raise ex
           end
         CODE
       end
 
-      def api_version(version)
-        @api_version = version
+      # Creating a raw_<method_name> class that handle the actual API call
+      # Making it private in favor of the use of the Parser
+      def define_api_call_routine(method_name)
+        class_action_module.module_eval <<-CODE
+          private; def raw_#{ method_name.to_s.underscore }(body = {}, &block)
+            request = client.request :tns, #{ method_name.inspect } do
+              soap.namespaces["xmlns:tns"] = target_namespace
+              http.headers["SOAPAction"] = soap_action_from_name('#{ method_name }')
+              soap.body = {
+                :auth => auth_credentials
+              }.merge(body)
+              block.call(soap, wsdl, http, wsse) if block
+            end
+          rescue Exception => e
+            rescue_exception(:#{ method_name.to_s.underscore }, e)
+          end
+        CODE
       end
 
-      def login(login)
-        @login = login
-      end
-
-      def password(password)
-        @password = password
-      end
-
-      def vindicia_class_name
+      def klass_name
         name.demodulize
       end
 
-      def vindicia_auth_credentials
-        {login: @login, password: @password, version: @api_version}
+      def auth_credentials
+        { login:    Vindicia.config.login,
+          password: Vindicia.config.password,
+          version:  Vindicia.config.api_version }
       end
 
-      def vindicia_target_namespace
-        "#{client.wsdl.namespace}/v#{underscoreize_periods(@api_version)}/#{vindicia_class_name}"
+      def target_namespace
+        "#{client.wsdl.namespace}/v#{underscoreize_periods(Vindicia.config.api_version)}/#{klass_name}"
       end
 
       def underscoreize_periods(target)
         target.gsub(/\./, '_')
       end
 
-      def vindicia_soap_action(action)
-        %{"#{vindicia_target_namespace}##{action.to_s.camelize(:lower)}"}
+      def soap_action_from_name(method_name)
+        %{"#{target_namespace}##{method_name.to_s.camelize(:lower)}"}
       end
 
-      def rescue_exception(action, error)
-        { "#{action}_response".to_sym => {
+      def rescue_exception(method_name, error)
+        { "#{method_name}_response".to_sym => {
           return: {
             return_code: '500',
             return_string: "Error contacting Vindicia: #{error.message}" }
@@ -104,10 +119,5 @@ module Vindicia
         end.tap { |mod| extend mod }
       end
     end
-
-    def self.included(base)
-      base.extend ClassMethods
-    end
-
   end
 end
