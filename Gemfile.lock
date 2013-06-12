@@ -1,0 +1,64 @@
+PATH
+  remote: .
+  specs:
+    vindicia-api (0.2.0)
+      activesupport
+      savon (~> 1.2.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activesupport (3.2.12)
+      i18n (~> 0.6)
+      multi_json (~> 1.0)
+    akami (1.2.0)
+      gyoku (>= 0.4.0)
+      nokogiri (>= 1.4.0)
+    builder (3.1.4)
+    diff-lcs (1.2.4)
+    gyoku (0.4.6)
+      builder (>= 2.1.2)
+    httpi (1.1.1)
+      rack
+    i18n (0.6.1)
+    metaclass (0.0.1)
+    mocha (0.13.2)
+      metaclass (~> 0.0.1)
+    multi_json (1.6.1)
+    nokogiri (1.5.6)
+    nori (1.1.4)
+    nyan-cat-formatter (0.5.0)
+      rspec (>= 2.13)
+    rack (1.5.2)
+    rake (10.0.3)
+    rr (1.1.0)
+    rspec (2.13.0)
+      rspec-core (~> 2.13.0)
+      rspec-expectations (~> 2.13.0)
+      rspec-mocks (~> 2.13.0)
+    rspec-core (2.13.1)
+    rspec-expectations (2.13.0)
+      diff-lcs (>= 1.1.3, < 2.0)
+    rspec-mocks (2.13.1)
+    savon (1.2.0)
+      akami (~> 1.2.0)
+      builder (>= 2.1.2)
+      gyoku (~> 0.4.5)
+      httpi (~> 1.1.0)
+      nokogiri (>= 1.4.0)
+      nori (~> 1.1.0)
+      wasabi (~> 2.5.0)
+    wasabi (2.5.1)
+      httpi (~> 1.0)
+      nokogiri (>= 1.4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  mocha
+  nyan-cat-formatter
+  rake
+  rr
+  rspec
+  vindicia-api!
