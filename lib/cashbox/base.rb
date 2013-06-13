@@ -22,7 +22,7 @@ module Cashbox
     end
 
     def empty?
-      self.marshal_dump.empty?
+      marshal_dump.empty?
     end
 
     def to_hash
@@ -35,6 +35,8 @@ module Cashbox
       api_native_attrs.merge!(materialized_objects)
     end
 
+    # Keep the global record of key: object to be initialized by this class
+    # the object might be a Cashbox::Class object, Array or Native Object
     def materialized_objects
       @materialized_objects ||= {}
     end
@@ -63,7 +65,7 @@ module Cashbox
 
     # Parses complex sub-objects into their own class based on their :"@xsi:type" type
     # Sub-classes are allowed, that's the reason behind inherit from Cashbox::Base on the new class
-    # If the attribute exist in the Cashbox::ATTRIBUTE_CUSTOM_CLASS, use the raw atribute values and their given class
+    # If the attribute exist in the Cashbox::ATTRIBUTE_CUSTOM_CLASS, use the raw attribute values and their given class
     # Class name is taken either from the @xsi:type object or the attribute key
     def sub_class_initialization!
       api_complex_attrs.each do |attrib_key, attrib_values|
@@ -77,12 +79,10 @@ module Cashbox
       end
     end
 
-    # Creates a new object based on the Cashbox::ATTRIBUTE_CUSTOM_CLASS table kay / values
+    # Creates a new object based on the Cashbox::ATTRIBUTE_CUSTOM_CLASS table key / values
     def create_custom_object(attrib_key, values)
       klass = Cashbox.get_or_create_class(Cashbox::ATTRIBUTE_CUSTOM_CLASS[attrib_key])
-      new_object = create_object(klass, values)
-
-      materialized_objects.merge!({ attrib_key => new_object })
+      materialized_objects.merge!({ attrib_key => klass.new(values) })
     end
 
     # Initializes a sub-class taking in consideration either the polymorphic
@@ -92,17 +92,13 @@ module Cashbox
       new_object = {}
       if values.is_a?(Array)
         new_object = values.reduce([]) do |output, attributes|
-          output << create_object(klass, attributes)
+          output << klass.new(attributes)
           output
         end
       else
-        new_object = create_object(klass, values)
+        new_object = klass.new(values)
       end
       materialized_objects.merge!({ attrib_key => new_object })
-    end
-
-    def create_object(klass, attribute_values)
-      klass.send(:new, attribute_values)
     end
   end
 end

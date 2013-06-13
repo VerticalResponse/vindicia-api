@@ -30,14 +30,16 @@ describe Vindicia do
     it 'should fail gracefully if its already configured' do
       expect do
         Vindicia.configure { |config| config.api_version = valid_api_version }
-      end.to raise_error('Vindicia-api gem has already been configured')
+      end.to raise_error(Vindicia::Configuration::ConfigError,
+                        'already configured')
     end
 
     it 'should fail gracefully if is already configured' do
       mock(Vindicia.config).is_configured? { false }
       expect do
         Vindicia.configure { |config| config.api_version = '3.0' }
-      end.to raise_error(RuntimeError, 'Vindicia-api gem doesn\'t support api version 3.0')
+      end.to raise_error(Vindicia::Configuration::ConfigError,
+                         'unsupported api version: 3.0')
     end
 
     it 'should initialize a Savon Client' do

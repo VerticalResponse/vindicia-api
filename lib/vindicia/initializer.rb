@@ -5,11 +5,15 @@ module Vindicia
     end
 
     def configure
-      raise 'Vindicia-api gem has already been configured' if config.is_configured?
+      if config.is_configured?
+        raise Vindicia::Configuration::ConfigError, 'already configured'
+      end
+
       yield config
 
       unless Vindicia::API_CLASSES.has_key?(config.api_version)
-        raise "Vindicia-api gem doesn't support api version #{ config.api_version }"
+        raise Vindicia::Configuration::ConfigError,
+              "unsupported api version: #{ config.api_version }"
       end
 
       initialize_savon!

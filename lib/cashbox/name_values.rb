@@ -6,9 +6,7 @@ module Cashbox
 
     def initialize(arguments = {})
       @raw_name_values = arguments
-
-      result = initialized_hash
-      super(result)
+      super(initialized_hash)
     end
 
     def to_hash
@@ -23,7 +21,7 @@ module Cashbox
       # instead of an Array of Hashes
       arr_name_values = @raw_name_values.is_a?(Array) ? @raw_name_values : [@raw_name_values]
 
-      result = arr_name_values.reduce(Hash.new) do |output, name_value_hash|
+      result = arr_name_values.reduce({}) do |output, name_value_hash|
         output[name_value_hash[:name].downcase]  = name_value_hash[:value]
         output
       end

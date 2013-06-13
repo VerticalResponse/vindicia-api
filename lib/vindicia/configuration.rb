@@ -4,6 +4,8 @@ module Vindicia
   class Configuration
     include Singleton
 
+    class ConfigError < StandardError; end
+
     attr_accessor :api_version, :login, :password, :endpoint, :namespace,
                   :general_log, :log_level, :log_filter, :logger,
                   :pretty_print_xml, :ssl_verify_mode, :client

@@ -55,11 +55,8 @@ module Vindicia
               end
               collection
             else
-              klass = Cashbox.const_get(klass_name)
-              klass.new(parser.parse!)
+              Cashbox.const_get(klass_name).new(parser.parse!)
             end
-          rescue Vindicia::Parser::IncorrectApiRequestError => ex
-            raise ex
           end
         CODE
       end

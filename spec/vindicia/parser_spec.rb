@@ -24,7 +24,8 @@ describe Vindicia::Parser do
         let(:response) { nil }
 
         it 'should fail gracefully' do
-          expect { call_parse }.to raise_error(Vindicia::Parser::IncorrectApiRequestError)
+          expect { call_parse }.to raise_error(Vindicia::Parser::ParsingError,
+                                               'should respond to :to_hash')
         end
       end
 
@@ -113,8 +114,9 @@ describe Vindicia::Parser do
           'any_response: { return:{ return_code: 200, return_string: OK} }'
         end
 
-        it 'should fail gracefully for to_hash convertion when unavailable' do
-          expect { call_parse }.to raise_error(Vindicia::Parser::IncorrectApiRequestError)
+        it 'should fail gracefully for to_hash converting when unavailable' do
+          expect { call_parse }.to raise_error(Vindicia::Parser::ParsingError,
+                                              'should respond to :to_hash')
         end
       end
     end
@@ -160,7 +162,8 @@ describe Vindicia::Parser do
       end
 
       it 'should raise an error of no block is given' do
-        expect { instance.parse! }.to raise_error(RuntimeError, 'a block is required')
+        expect { instance.parse! }.to raise_error(Vindicia::Parser::ParsingError,
+                                                  'a block is required')
       end
 
       it 'should each item have the correct data' do

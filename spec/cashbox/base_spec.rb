@@ -11,7 +11,7 @@ describe Cashbox::Base do
   end
 
   subject(:call_initialize) { Cashbox::Testing.new(raw_api_response) }
-  
+
   describe '#initialize' do
     let(:content) do
       {
@@ -116,7 +116,7 @@ describe Cashbox::Base do
       }
     end
 
-    it 'should initialize correclty with simple attributes' do
+    it 'should initialize correctly with simple attributes' do
       call_initialize.methods.should include(:merchant_product_id, :status)
       call_initialize.methods.should_not include(:name_values)
     end
@@ -132,7 +132,7 @@ describe Cashbox::Base do
       }
     end
 
-    it 'should initialize correclty with simple attributes' do
+    it 'should initialize correctly with simple attributes' do
       call_initialize.methods.should include(:merchant_entitlement_ids)
       call_initialize.methods.should_not include(:id)
       call_initialize.merchant_entitlement_ids[0].methods.should include(:id)
