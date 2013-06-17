@@ -71,6 +71,7 @@ module Vindicia
     end
 
     def result_match_parent_object?(return_attribute)
+      Cashbox::CUSTOM_ATTRIB_TO_CLASS[return_attribute] or
       [request_klass_name, request_klass_name.pluralize].
         include?(return_attribute.to_s.capitalize.camelcase)
     end

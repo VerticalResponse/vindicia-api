@@ -3,7 +3,7 @@ module Cashbox
     attr_reader :raw_api_response
 
     def initialize(arguments = {})
-      @raw_api_response = arguments
+      @raw_api_response = replace_custom_attributes!(arguments)
 
       sub_class_initialization!
       super(joint_hash)
@@ -30,6 +30,16 @@ module Cashbox
     end
 
     private
+
+    # Custom Attributes like :vid are case sensitive, so a replace is needed
+    def replace_custom_attributes!(raw_api_response)
+      Cashbox::CUSTOM_ATTRIB_RENAME.each do |original_key, new_key|
+        if raw_api_response.has_key?(original_key)
+          raw_api_response[new_key] = raw_api_response.delete(original_key)
+        end
+      end
+      raw_api_response
+    end
 
     def joint_hash
       api_native_attrs.merge!(materialized_objects)
@@ -65,32 +75,29 @@ module Cashbox
 
     # Parses complex sub-objects into their own class based on their :"@xsi:type" type
     # Sub-classes are allowed, that's the reason behind inherit from Cashbox::Base on the new class
-    # If the attribute exist in the Cashbox::ATTRIBUTE_CUSTOM_CLASS, use the raw attribute values and their given class
+    # If the attribute exist in the Cashbox::CUSTOM_ATTRIB_TO_CLASS, use the raw attribute values and their given class
     # Class name is taken either from the @xsi:type object or the attribute key
     def sub_class_initialization!
       api_complex_attrs.each do |attrib_key, attrib_values|
-        if Cashbox::ATTRIBUTE_CUSTOM_CLASS.has_key?(attrib_key)
-          create_custom_object(attrib_key, attrib_values)
-        else
-          klass_name = klass_name_from_type(attrib_values) || klass_name_from_attribute(attrib_key)
-          klass = Cashbox.get_or_create_class(klass_name)
-          initialize_sub_objects(klass, attrib_key, attrib_values)
-        end
-      end
-    end
+        custom_class_name    = Cashbox::CUSTOM_ATTRIB_TO_CLASS[attrib_key] || {}
+        create_single_object = custom_class_name[:create_single_object]
 
-    # Creates a new object based on the Cashbox::ATTRIBUTE_CUSTOM_CLASS table key / values
-    def create_custom_object(attrib_key, values)
-      klass = Cashbox.get_or_create_class(Cashbox::ATTRIBUTE_CUSTOM_CLASS[attrib_key])
-      materialized_objects.merge!({ attrib_key => klass.new(values) })
+        klass_name =  custom_class_name[:class_name] ||
+                      klass_name_from_type(attrib_values) ||
+                      klass_name_from_attribute(attrib_key)
+
+
+        klass = Cashbox.get_or_create_class(klass_name)
+        initialize_sub_objects(klass, attrib_key, attrib_values, create_single_object)
+      end
     end
 
     # Initializes a sub-class taking in consideration either the polymorphic
     # input object is an array or hash
-    def initialize_sub_objects(klass, attrib_key, values)
+    def initialize_sub_objects(klass, attrib_key, values, create_single_object = nil)
       # In case the sub-object is an array. Let's initialize each one and return the arr as it
       new_object = {}
-      if values.is_a?(Array)
+      if values.is_a?(Array) && !create_single_object
         new_object = values.reduce([]) do |output, attributes|
           output << klass.new(attributes)
           output

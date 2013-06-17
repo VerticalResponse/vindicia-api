@@ -16,18 +16,22 @@ describe Cashbox::Base do
     let(:content) do
       {
         '@xsi:type'.to_sym  =>      'vin:Product',
+        vid:                        'ABCDEF123456',
         merchant_product_id:        'NEW_PRODUCT',
         status:                     'Active',
         descriptions: {
           '@xsi:type'.to_sym =>     'vin:ProductDescription',
+          vid:                       'ABCDEF123456',
           description:              'Our new created Product',
           language:                 'EN',
         },
         default_billing_plan: {
           '@xsi:type'.to_sym  =>    'vin:BillingPlan',
+          vid:                       'ABCDEF123456',
           merchant_billing_plan_id: 'Billing Plan 1',
           periods: {
             '@xsi:type'.to_sym  =>  'vin:BillingPlanPeriod',
+            vid:                     'ABCDEF123456',
             type:                   'Month',
             quantity:                1,
             cycles:                  0,
@@ -53,7 +57,8 @@ describe Cashbox::Base do
     end
 
     it 'should contain native attributes' do
-      call_initialize.methods.should include(:status, :merchant_product_id)
+      call_initialize.methods.should include(:VID, :status, :merchant_product_id)
+      call_initialize.methods.should_not include(:vid)
     end
 
     it 'should contain sub-object attributes' do
@@ -71,7 +76,7 @@ describe Cashbox::Base do
       end
 
       it 'should not contain an array of name_values' do
-        # According to this mapping: Cashbox::ATTRIBUTE_CUSTOM_CLASS
+        # According to this mapping: Cashbox::CUSTOM_ATTRIB_TO_CLASS
         call_initialize.name_values.class.to_s.should == 'Cashbox::NameValues'
         call_initialize.name_values.methods.should_not include(:name_values)
       end
@@ -83,7 +88,8 @@ describe Cashbox::Base do
       end
 
       it 'should include native attributes' do
-        call_initialize.default_billing_plan.periods.methods.should include(:quantity, :type)
+        call_initialize.default_billing_plan.periods.methods.should include(:VID, :quantity, :type)
+        call_initialize.default_billing_plan.periods.methods.should_not include(:vid)
       end
     end
 
@@ -111,14 +117,15 @@ describe Cashbox::Base do
     let(:content) do
       {
         '@xsi:type'.to_sym  =>  'vin:Product',
+        vid:                    'ABCDEF123456',
         merchant_product_id:    'NEW_PRODUCT',
         status:                 'Active',
       }
     end
 
     it 'should initialize correctly with simple attributes' do
-      call_initialize.methods.should include(:merchant_product_id, :status)
-      call_initialize.methods.should_not include(:name_values)
+      call_initialize.methods.should include(:VID, :merchant_product_id, :status)
+      call_initialize.methods.should_not include(:vid, :name_values)
     end
   end
 

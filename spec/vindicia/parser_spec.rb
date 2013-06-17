@@ -148,8 +148,8 @@ describe Vindicia::Parser do
     context 'for a multiple object request' do
 
       let(:content) do
-        [{ product: { merchant_product_id: 1 } },
-         { product: { merchant_product_id: 2 } }]
+        [{ merchant_product_id: 1 },
+         { merchant_product_id: 2 }]
       end
 
       it 'should yield twice in order to get the correct response' do
@@ -167,6 +167,35 @@ describe Vindicia::Parser do
       end
 
       it 'should each item have the correct data' do
+        items = []
+        instance.parse! do |item|
+          items << item
+        end
+        items.should instance_of(Array)
+        items.size.should == 2
+
+        items[0].should == content[0]
+        items[1].should == content[1]
+      end
+    end
+  end
+
+  describe 'An exception on the object name and result' do
+    let(:method_name)      { :fetch_by_account }
+    let(:klass_name)       { 'AutoBill' }
+    let(:result_attribute) { :autobills }
+    let(:output_results)   { [:autobills] }
+    let(:response) do
+      build_api_response(method_name, result_attribute, content)
+    end
+
+    context 'given an array of autobills' do
+      let(:content) do
+        [{ vid: 'ABCDEF123456' , merchant_auto_bill_id: 1 },
+         { vid: 'ABCDEF123457' , merchant_auto_bill_id: 2 }]
+      end
+
+      it 'should yield twice in order to get the correct response' do
         items = []
         instance.parse! do |item|
           items << item
