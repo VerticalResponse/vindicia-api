@@ -34,7 +34,7 @@ module Cashbox
     # Custom Attributes like :vid are case sensitive, so a replace is needed
     def replace_custom_attributes!(raw_api_response)
       Cashbox::CUSTOM_ATTRIB_RENAME.each do |original_key, new_key|
-        if raw_api_response.has_key?(original_key)
+        if raw_api_response && raw_api_response.has_key?(original_key)
           raw_api_response[new_key] = raw_api_response.delete(original_key)
         end
       end

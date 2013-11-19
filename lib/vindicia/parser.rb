@@ -1,6 +1,7 @@
 module Vindicia
   class Parser
     class IncorrectApiRequestError < Exception; end
+    class EmptyResponseError < Exception; end
     class ParsingError < Exception; end
 
     attr_reader :response, :request_klass_name, :method_name, :output_results
@@ -58,7 +59,12 @@ module Vindicia
     def process_hash_results(response)
       returned_hashes = output_results.reduce({}) do | output, result_option |
         api_output = get_response_output(response, result_option)
-        next unless api_output
+
+        # TODO: Many Calls expect to return an empty valid response
+        unless api_output
+          return_code = get_response_output(response, :result)
+          raise(EmptyResponseError, "an empty response was returned with code #{ return_code }")
+        end
 
         if result_match_parent_object?(result_option)
           output = api_output.merge!(output)
@@ -86,6 +92,8 @@ module Vindicia
 
     def raise_error_unless_200(response)
       return_code = response[:return][:return_code]
+
+      # TODO: Many calls won't return 200 and it's not really an Error.
       unless return_code == '200'
         message = response[:return][:return_string]
 
