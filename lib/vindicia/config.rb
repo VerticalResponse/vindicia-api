@@ -150,9 +150,20 @@ module Vindicia
       :web_session=>[:init, :finalize, :fetch_by_vid] # initialize is a ruby reserved word.
     }
   }
+
   # initialize is a ruby reserved word. map alias to real soap action name as workaround
   API_ACTION_NAME_RESERVED_BY_RUBY_MAPS = {
     :init => :initialize
+  }
+
+  # Some fields need to be explicitly typed so that Vindicia does
+  # not misunderstand them (https://support.vindicia.com/browse/CTS-6396)
+  FIELD_TYPE_ATTRIBUTES = {
+   :string => { :xmlns => '', :'xsi:type' => 'xsd:string' },
+  }
+
+  EXPLICIT_FIELD_TYPES = {
+    :merchant_affiliate_id => :string,
   }
 
   class Configuration
