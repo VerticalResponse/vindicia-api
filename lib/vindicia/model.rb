@@ -49,9 +49,9 @@ module Vindicia
             client.request :tns, #{ real_action.inspect } do
               soap.namespaces["xmlns:tns"] = vindicia_target_namespace
               http.headers["SOAPAction"] = vindicia_soap_action('#{ real_action }')
-              soap.body = {
+              soap.body = explicit_type_attributes_for({
                 :auth => vindicia_auth_credentials
-              }.merge(body)
+              }.merge(body))
               block.call(soap, wsdl, http, wsse) if block
             end
           rescue HTTPClient::ConnectTimeoutError, Timeout::Error, Errno::ETIMEDOUT => e
@@ -80,6 +80,28 @@ module Vindicia
 
       def vindicia_auth_credentials
         {login: @login, password: @password, version: @api_version}
+      end
+
+      def explicit_type_attributes_for(hash)
+        r = hash.inject({}) do |h, (k,v)|
+          h[k] = case v
+                 when Hash
+                   explicit_type_attributes_for(v)
+                 else
+                   v
+                 end
+          h
+        end
+
+        explicit_fields = EXPLICIT_FIELD_TYPES.keys & hash.keys
+        if explicit_fields.any?
+          r[:attributes!] = explicit_fields.inject({}) do |e,f|
+            e[f] = FIELD_TYPE_ATTRIBUTES[EXPLICIT_FIELD_TYPES[f]]
+            e
+          end
+        end
+
+        r
       end
 
       def vindicia_target_namespace
