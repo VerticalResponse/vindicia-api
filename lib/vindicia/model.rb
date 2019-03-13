@@ -89,20 +89,21 @@ module Vindicia
       private
 
       def define_class_action(action)
-        real_action = Vindicia::API_ACTION_NAME_RESERVED_BY_RUBY_MAPS[action] || action
+        escaped_action = !action.to_s.start_with?('_') ? action : action[1..-1] #chomp leading _, if present
         class_action_module.module_eval <<-RUBY, __FILE__, __LINE__ + 1
           def #{action.to_s.underscore}(body = {}, &block)
             Retriable.retriable :on       => [ HTTPClient::ConnectTimeoutError, Net::OpenTimeout, Timeout::Error, Errno::ETIMEDOUT, Errno::ECONNRESET],
                                 :tries    => Vindicia.config.max_connect_attempts,
                                 :interval => method(:retry_interval),
                                 :on_retry => method(:log_retry) do
-              client.request :tns, #{ real_action.inspect } do
+              client.request :tns, #{escaped_action.inspect} do
                 soap.namespaces["xmlns:tns"] = vindicia_target_namespace
-                http.headers["SOAPAction"] = vindicia_soap_action('#{ real_action }')
+                http.headers["SOAPAction"] = vindicia_soap_action('#{escaped_action}')
                 soap.body = {
                   :auth => vindicia_auth_credentials
                 }.merge(body)
                 block.call(soap, wsdl, http, wsse) if block
+
               end
             end
           rescue HTTPClient::ConnectTimeoutError, Net::OpenTimeout, Timeout::Error, Errno::ETIMEDOUT, Errno::ECONNRESET => e
