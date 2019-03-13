@@ -9,8 +9,8 @@ Gem::Specification.new do |gem|
   gem.email         = ['tquackenbush@agoragames.com', 'vgarro@verticalresponse.com']
   gem.homepage      = 'https://github.com/agoragames/vindicia-api'
   gem.summary       = %q{A wrapper for creating queries to the Vindicia CashBox API}
-  gem.description   = %q{Provides a Singleton series of classes to communicate with Vindicia's Cashbox API}
-  gem.license       = 'Copyright (c) 2011-2013 Agora Games'
+  gem.description   = %q{A wrapper for creating queries to the Vindicia CashBox API}
+  gem.license       = 'MIT'
 
   gem.rubyforge_project = 'vindicia-api'
 
@@ -27,4 +27,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency('test-unit')
   gem.add_development_dependency('httpclient')
   gem.add_development_dependency('mocha', '~> 0.14.0')
+  gem.add_development_dependency('webmock')
+  gem.add_development_dependency('vcr')
 end
