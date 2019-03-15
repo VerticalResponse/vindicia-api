@@ -1,4 +1,4 @@
-require 'helper'
+require_relative '../helper'
 require 'net/http'
 require 'httpclient'
 
@@ -9,6 +9,8 @@ class Vindicia::ModelTest < Test::Unit::TestCase
     Vindicia.class_eval do
       def self.clear_config
         if Vindicia.config.is_configured?
+          Vindicia.config.max_connect_attempts = Vindicia::Configuration::DEFAULT_MAX_CONNECT_ATTEMPTS
+          Vindicia.config.retry_multiplier = Vindicia::Configuration::DEFAULT_RETRY_MULTIPLIER
           Vindicia::API_CLASSES[Vindicia.config.api_version].each_key do |vindicia_klass|
             Vindicia.send(:remove_const, vindicia_klass.to_s.camelize.to_sym)
           end
@@ -37,7 +39,7 @@ class Vindicia::ModelTest < Test::Unit::TestCase
 
   def teardown
     Vindicia.clear_config
-    Vindicia::Config.reset_instance
+    Vindicia::Configuration.reset_instance
   end
 
   def test_should_define_api_methods_of_respective_vindicia_class_for_respective_api_version
@@ -62,17 +64,17 @@ class Vindicia::ModelTest < Test::Unit::TestCase
      Errno::ETIMEDOUT,
      Errno::ECONNRESET
     ].each do | exception_class |
-      Vindicia::AutoBill.expects(:log_retry).never
+      Vindicia::AutoBill.expects(:log_retry).once
       Vindicia::AutoBill.client.expects(:request).once.raises(exception_class)
       assert_failure('503')
     end
   end
 
   def test_should_retry_connection_errors
-    Vindicia.config.max_connect_attempts = 2 # retry once, then fail
+    Vindicia.config.max_connect_attempts = 3 # retry 3 times, then fail
     [ HTTPClient::ConnectTimeoutError, Errno::ECONNRESET ].each do | exception_class |
-      Vindicia::AutoBill.expects(:log_retry).once
-      Vindicia::AutoBill.client.expects(:request).twice.raises(exception_class)
+      Vindicia::AutoBill.expects(:log_retry).times(3)
+      Vindicia::AutoBill.client.expects(:request).times(3).raises(exception_class)
       assert_failure('503')
     end
   end

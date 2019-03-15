@@ -28,7 +28,7 @@ Add something like the following to your environments or in an initializer:
 
 ```ruby
 Vindicia.configure do |config|
-  config.api_version = '4.2'
+  config.api_version = '23.0'
   config.login = 'your_login'
   config.password = 'your_password'
   config.endpoint = 'https://soap.prodtest.sj.vindicia.com/soap.pl'
@@ -68,7 +68,7 @@ end
 
 You will want to modify the example above with which API version you are targeting, your login credentials, and the Vindicia endpoint you will be using.
 
-Current supported API versions are [ '3.5', '3.6', '3.7', '3.8', '3.9', '4.0', '4.1', '4.2' ].
+Current supported API versions are [ '3.5', '3.6', '3.7', '3.8', '3.9', '4.0', '4.1', '4.2', '23.0' ].
 
 For a fuller understanding of the supported versions, classes, and methods, see
 Vindicia::API_CLASSES.  For instance, the list of versions may be introspected
@@ -97,6 +97,35 @@ end
 ```
 
 * Note that parameters must be specified in the same order as documented in Vindicia's developer documentation.
+
+## How to update new Vindicia api methods
+
+```ruby
+require 'rexml/document'
+include REXML
+version = '23.0'
+# taken from https://www.vindicia.com/documents/2300APIGuideHTML5/Default.htm
+vindicia_objs = %w(Account Activity Address AutoBill BillingPlan Campaign Chargeback Entitlement GiftCard NameValuePair PaymentMethod PaymentProvider Product RatePlan Refund SeasonSet Token Transaction WebSession)
+vindicia_objs.each do |obj|
+  `curl https://soap.vindicia.com/#{version}/#{obj}.wsdl -o /tmp/#{obj}.wsdl 2>&1`
+end
+methods_version = { version => {} }
+vindicia_objs.each do |obj|
+  current_methods = methods_version[version][obj.underscore.to_sym] = []
+  xmlfile = File.new("/tmp/#{obj}.wsdl")
+  xmldoc = REXML::Document.new(xmlfile)
+  xmldoc.elements.each("definitions/portType/operation") do |e|
+    meth = e.attributes['name'].underscore.to_sym
+    current_methods << (meth == :initialize ? :init : meth)
+  end
+end
+puts methods_version.inspect
+```
+
+## How to run tests
+
+Simply run files from test folder like:
+  ruby test/vindicia/model_test.rb
 
 ## Hacks
 

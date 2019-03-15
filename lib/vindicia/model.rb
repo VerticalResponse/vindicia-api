@@ -64,12 +64,6 @@ module Vindicia
         client.http.read_timeout = timeout
       end
 
-
-      # Exponential backoff, for use by connection failure handling code
-      def retry_interval(attempt)
-        2**(attempt - 1)
-      end
-
       # This method has to match the retriable callback
       # https://github.com/kamui/retriable/blob/eaab7caba015389adf1b892e9bec4e97f9430eda/lib/retriable.rb#L70
       # on_retry.call(exception, try, elapsed_time, interval) if on_retry
@@ -89,12 +83,12 @@ module Vindicia
       private
 
       def define_class_action(action)
-        escaped_action = !action.to_s.start_with?('_') ? action : action[1..-1] #chomp leading _, if present
+        escaped_action = Vindicia::API_ACTION_NAME_RESERVED_BY_RUBY_MAPS[action] || action
         class_action_module.module_eval <<-RUBY, __FILE__, __LINE__ + 1
           def #{action.to_s.underscore}(body = {}, &block)
             Retriable.retriable :on       => [ HTTPClient::ConnectTimeoutError, Net::OpenTimeout, Timeout::Error, Errno::ETIMEDOUT, Errno::ECONNRESET],
                                 :tries    => Vindicia.config.max_connect_attempts,
-                                :interval => method(:retry_interval),
+                                :multiplier => Vindicia.config.retry_multiplier,
                                 :on_retry => method(:log_retry) do
               client.request :tns, #{escaped_action.inspect} do
                 soap.namespaces["xmlns:tns"] = vindicia_target_namespace
@@ -107,10 +101,10 @@ module Vindicia
               end
             end
           rescue HTTPClient::ConnectTimeoutError, Net::OpenTimeout, Timeout::Error, Errno::ETIMEDOUT, Errno::ECONNRESET => e
-            rescue_exception(:#{ action.to_s.underscore }, '503', e.message)
+            rescue_exception(:#{ escaped_action.to_s.underscore }, '503', e.message)
           rescue Exception => e
             raise if %w(Mocha::ExpectationError WebMock::NetConnectNotAllowedError).include? e.class.name
-            rescue_exception(:#{ action.to_s.underscore }, '500', e.message)
+            rescue_exception(:#{ escaped_action.to_s.underscore }, '500', e.message)
           end
         RUBY
       end

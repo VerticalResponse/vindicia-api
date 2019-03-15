@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'bundler'
-require 'singleton_reset'
+require_relative 'singleton_reset'
+
 begin
   Bundler.setup(:default, :development)
 rescue Bundler::BundlerError => e

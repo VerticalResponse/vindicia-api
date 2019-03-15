@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.1.4 (2019-03-22)
+* Adding support for 23.0 Vindicia api
+* Including fixes for retriable
+* Adding documentation to pull vindicia classes and methods
+* Fixing broken tests
+
 ## 0.1.3
 * Support newer TLS versions by supporting newer savon, to use newer httpi.
 * Fixed bad active_support require statement.
