@@ -1,4 +1,4 @@
-require 'helper'
+require_relative '../helper'
 
 class Vindicia::ConfigTest < Test::Unit::TestCase
 
@@ -16,7 +16,7 @@ class Vindicia::ConfigTest < Test::Unit::TestCase
 
   def teardown
     Vindicia.clear_config
-    Vindicia::Config.reset_instance
+    Vindicia::Configuration.reset_instance
   end
 
   def set_config_values(config, api_version)

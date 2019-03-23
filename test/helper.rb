@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'bundler'
-require 'singleton_reset'
+require_relative 'singleton_reset'
+
 begin
   Bundler.setup(:default, :development)
 rescue Bundler::BundlerError => e
@@ -17,4 +18,17 @@ require 'vindicia-api'
 class Test::Unit::TestCase
 end
 
-require 'mocha'
+require 'mocha/setup'
+require 'webmock/test_unit'
+require 'vcr'
+
+VCR.configure do |c|
+  c.cassette_library_dir = 'test/fixtures/vcr_cassettes'
+  c.hook_into :webmock
+end
+
+Savon.configure do |config|
+  config.log = false
+end
+
+HTTPI.log = false

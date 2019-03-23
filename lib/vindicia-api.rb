@@ -1,5 +1,5 @@
 require 'active_support/core_ext/string/inflections'
 require 'vindicia/version'
 require 'vindicia/config'
-require 'vindicia/mappings'
 require 'vindicia/model'
+require 'vindicia/savon'
